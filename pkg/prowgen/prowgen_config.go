@@ -35,7 +35,8 @@ type Branch struct {
 }
 
 type CommonConfig struct {
-	Branches map[string]Branch `json:"branches" yaml:"branches"`
+	Branches  map[string]Branch                   `json:"branches" yaml:"branches"`
+	Resources cioperatorapi.ResourceConfiguration `json:"resources,omitempty"`
 }
 
 type ReleaseBuildConfigurationOption func(cfg *cioperatorapi.ReleaseBuildConfiguration) error
@@ -81,12 +82,18 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			}
 
 			resources := make(cioperatorapi.ResourceConfiguration, 1)
-			resources["*"] = cioperatorapi.ResourceRequirements{
-				Requests: map[string]string{
-					"cpu":    "500m",
-					"memory": "1Gi",
-				},
+			if cc.Resources != nil {
+				resources = cc.Resources
+			} else {
+				resources["*"] = cioperatorapi.ResourceRequirements{
+					Requests: map[string]string{
+						"cpu":    "500m",
+						"memory": "1Gi",
+					},
+				}
 			}
+
+			// Merge with existing config
 			for k, v := range r.Resources {
 				resources[k] = v
 			}
